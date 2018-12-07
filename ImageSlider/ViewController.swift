@@ -14,11 +14,13 @@ class ViewController: UIViewController {
     @IBOutlet weak var pageControl: UIPageControl!
     
     let images = [
+        UIImage(named: "5"),
         UIImage(named: "1"),
         UIImage(named: "2"),
         UIImage(named: "3"),
         UIImage(named: "4"),
-        UIImage(named: "5")
+        UIImage(named: "5"),
+        UIImage(named: "1")
     ]
     
     var currentIndex = 0
@@ -26,25 +28,35 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        pageControl.numberOfPages = images.count
+        adjustCollectionViewContentOffset()
+        pageControl.numberOfPages = 5
         startTimer()
     }
     
-    
     func startTimer(){
-    
         timer = Timer.scheduledTimer(timeInterval: 3.0, target: self, selector: #selector(timerAction), userInfo: nil, repeats: true)
     }
     
     @objc func timerAction(){
-        
-        let desiredScrollPosition = (currentIndex < images.count - 1) ? currentIndex + 1 : 0
-        collectionView.scrollToItem(at: IndexPath(item: desiredScrollPosition, section: 0), at: .centeredHorizontally, animated: true)
+        let indexPath = collectionView.indexPath(for: collectionView.visibleCells[0])!
+        if indexPath.row < images.count - 1 {
+            collectionView.scrollToItem(at: IndexPath(item: indexPath.row + 1, section: indexPath.section), at: .right, animated: true)
+        }
     }
     
-    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        collectionView.scrollToItem(at: IndexPath(row: 1, section: 0), at: .left, animated: false)
 
+    }
+    
+    func adjustCollectionViewContentOffset() {
+        if images.count > 1 {
+            if collectionView.contentOffset.x == 0.0 {
+                collectionView.contentOffset = CGPoint(x: view.frame.width, y: 0.0)
+            }
+        }
+    }
 
 }
 
@@ -71,9 +83,31 @@ extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource, 
     
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+
+        let numberOfCells = images.count
+        let page = Int(scrollView.contentOffset.x) / Int(view.frame.width)
+        var currentPage = 0
         
-        currentIndex = Int(scrollView.contentOffset.x / collectionView.frame.size.width)
-        pageControl.currentPage = currentIndex
+        if numberOfCells == 1 {
+            return
+        }
+        
+        let regularContentOffset = view.frame.width * CGFloat(numberOfCells - 2)
+        if (scrollView.contentOffset.x >= view.frame.width * CGFloat(numberOfCells - 1)) {
+            scrollView.contentOffset = CGPoint(x: scrollView.contentOffset.x - regularContentOffset, y: 0.0)
+        } else if (scrollView.contentOffset.x < view.frame.width) {
+            scrollView.contentOffset = CGPoint(x: scrollView.contentOffset.x + regularContentOffset, y: 0.0)
+        }
+        
+        
+        if page == 0 {
+            currentPage = numberOfCells - 1
+        } else if page == numberOfCells - 1 {
+            currentPage = 0
+        } else {
+            currentPage = page - 1
+        }
+        pageControl.currentPage = currentPage
     }
     
 }
